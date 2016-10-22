@@ -6,14 +6,23 @@
 % Getting permutated values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-X{1} = hdf5read('/Users/basilminkov/Desktop/Neurofeedback/Data/A12/raw.h5', 'protocol2'); 
-X{2} = hdf5read('/Users/basilminkov/Desktop/Neurofeedback/Data/A12/raw.h5', 'protocol8'); 
-X{3} = hdf5read('/Users/basilminkov/Desktop/Neurofeedback/Data/A12/raw.h5', 'protocol12');
-X{4} = hdf5read('/Users/basilminkov/Desktop/Neurofeedback/Data/A12/raw.h5', 'protocol14');
-Y{1} = hdf5read('/Users/basilminkov/Desktop/Neurofeedback/Data/A12/raw.h5', 'protocol4'); 
-Y{2} = hdf5read('/Users/basilminkov/Desktop/Neurofeedback/Data/A12/raw.h5', 'protocol6'); 
-Y{3} = hdf5read('/Users/basilminkov/Desktop/Neurofeedback/Data/A12/raw.h5', 'protocol10'); 
-Y{4} = hdf5read('/Users/basilminkov/Desktop/Neurofeedback/Data/A12/raw.h5', 'protocol16');
+% X{1} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A12_d1', 'protocol2'); 
+% X{2} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A12_d1', 'protocol8'); 
+% X{3} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A12_d1', 'protocol12');
+% X{4} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A12_d1', 'protocol14');
+% Y{1} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A12_d1', 'protocol4'); 
+% Y{2} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A12_d1', 'protocol6'); 
+% Y{3} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A12_d1', 'protocol10'); 
+% Y{4} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A12_d1', 'protocol16');
+
+X{1} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A18_d1\raw.h5', 'protocol2'); 
+X{2} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A18_d1\raw.h5', 'protocol8'); 
+X{3} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A18_d1\raw.h5', 'protocol12');
+X{4} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A18_d1\raw.h5', 'protocol14');
+Y{1} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A18_d1\raw.h5', 'protocol4'); 
+Y{2} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A18_d1\raw.h5', 'protocol6'); 
+Y{3} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A18_d1\raw.h5', 'protocol10'); 
+Y{4} = hdf5read('D:\Minkov\Alpha Feedback\Data\One Day Data\A18_d1\raw.h5', 'protocol16');
 
 h = waitbar(0, 'Wait...');
 steps = 100;
@@ -155,14 +164,14 @@ H = uicontrol('Style', 'PushButton', ...
     
 % Plot "component's eigenvalue = f(frequency)"
 
-figure(1);
+f1 = figure(1);
 % plot(FF, D0(:, numComp));
 imagesc(p);
 colorbar;
 
 while (ishandle(H))
     
-    figure(1);
+    f1;
     
     % Picking figure's coordinates
     [x0,y0] = ginput(1);
@@ -195,8 +204,5 @@ while (ishandle(H))
     
 end
 
-% save('/Users/basilminkov/Desktop/Neurofeedback/Analysis/A12/A12_explicit/A12_explicit_p_value_lol', p_value_lol);
-% save('/Users/basilminkov/Desktop/Neurofeedback/Analysis/A12/A12_explicit/A12_explicit_p_value', p_value);
-% save('/Users/basilminkov/Desktop/Neurofeedback/Analysis/A12/A12_explicit/A12_explicit_W0', W0);
-% save('/Users/basilminkov/Desktop/Neurofeedback/Analysis/A12/A12_explicit/A12_explicit_De', De);
-% saveas('/Users/basilminkov/Desktop/Neurofeedback/Analysis/A12/A12_explicit/A12_explicit_comp=f(Fr)', figure(1));
+saveas(f1, 'D:\Minkov\Alpha Feedback\Analysis\A18_d1\A18_d1_p_value.png')
+save('D:\Minkov\Alpha Feedback\Analysis\A18_d1\A18_d1.mat')
