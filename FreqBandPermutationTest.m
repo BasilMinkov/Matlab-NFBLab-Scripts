@@ -9,7 +9,7 @@ clear all;
 %%%%%%%%%%%%%%%%%%%%%%% XML Object %%%%%%%%%%%%%%%%%%%%%%%
 
 data_object = eegData();
-data_object.path = '/Users/basilminkov/Desktop/Neurofeedback/data_30min/a5_d1_03-20_20-23-30/';
+data_object.path = '/Users/basilminkov/Desktop/Neurofeedback/data_30min/a42_d1_03-24_18-52-01/';
 data_object = data_object.makeParsing();
 % data_object.protocols_list
 [usefulProtocolsList, numberProtocolList, numberList, encodedProtocolList] = data_object.getUsefulProtocolsList();
@@ -36,11 +36,10 @@ clear i id ram_protocol
 
 %%%%%%%%%%%%%%%%%%%%%%% General Settings %%%%%%%%%%%%%%%%%%%%%%%
 
-frequencies = 40;
+frequencies = 30;
 steps = 300; % number of permutations
 srate = 500; % sampling rate of data
 h = waitbar(0, 'Wait...'); % initializing the process bar
-% protTotNum = 1; % number of protocols to be considered
 N_sub_prot = 4; % Number of subprotocols. A protocol length 
                 % will be divided by this number. 
 distDel = 500; % number of possible distorted by a filter values that 
@@ -94,6 +93,13 @@ Mids = new_Mids;
 counterR = counterR - 1;
 counterM = counterM - 1;
 
+counterG = counterR+counterM;
+Gids = [Rids Mids];
+
+D_sg = zeros(steps, 32);
+Dr = zeros(frequencies, 32);
+FF = zeros(frequencies);
+
 %%%%%%%%%%%%%%%%%%%%%%% Permutation Test %%%%%%%%%%%%%%%%%%%%%%%
 
 for frequency=1:frequencies % frequency for FIR filter
@@ -112,18 +118,21 @@ for frequency=1:frequencies % frequency for FIR filter
     
     for step=1:steps
         
+%         tic
         % so far subprot_lenght are equal for all the protocols
         
-        ind = randperm(counterR);
+        inds = randperm(counterG);
+        
+        ind = inds(1:counterG/2);
         R = zeros(32, counterR*subprot_lenght);
         for i = 1:counterR
-            R(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Rids(ind(i)):Rids(ind(i))+(subprot_lenght-1));
+            R(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Gids(ind(i)):Gids(ind(i))+(subprot_lenght-1));
         end
         
-        ind = randperm(counterM);
+        ind = inds((counterG/2)+1:counterG);
         M = zeros(32, counterM*subprot_lenght);
         for i = 1:counterM
-            M(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Mids(ind(i)):Mids(ind(i))+(subprot_lenght-1));
+            M(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Gids(ind(i)):Gids(ind(i))+(subprot_lenght-1));
         end
                 
         l_R = length(R);
@@ -144,6 +153,8 @@ for frequency=1:frequencies % frequency for FIR filter
         % try different regularization parameters p_reg
 
         [V, d] = eig(C1,C2);
+%         d(1, 1)
+%         toc
         D_sg(step,:) = diag(d)'; 
         
         waitbar((((frequency-1)*steps)+step)/(frequencies*steps)) 
@@ -185,6 +196,8 @@ for frequency=1:frequencies % frequency for FIR filter
     % FF - vector of frequencies
     % ...r means "real"
     [Ve, de] = eig(C1r,C2r); 
+%     de(1,1)
+    
     Dr(frequency, :) = diag(de)';
     Wr{frequency} = inv(Ve');
     FF(frequency) = frequency+1;
@@ -207,6 +220,17 @@ for frequency=1:frequencies % frequency for FIR filter
 end
 
 close(h);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Save Data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+nameDir = data_object.path;
+
+if exist(nameDir) ~= 7
+   mkdir(nameDir)
+end
+save([data_object.path 'matlab_workspace.mat'])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot Statistics
@@ -268,17 +292,3 @@ while (ishandle(H))
     title(num2str(Dr(y, x)));
     
 end
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Save Data
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% nameDir = '/Users/basilminkov/Desktop/Neurofeedback/Analysis/a3_p1_d2_03-10_19-51-08(half)';
-% 
-% if exist(nameDir) ~= 7
-%    mkdir(nameDir)
-% end
-% save('/Users/basilminkov/Desktop/Neurofeedback/Analysis/a3_p1_d2_03-10_19-51-08(half)/a3_p1_d2_03-10_19-51-08.mat')
-
-% saveas(figure(1), '/Users/basilminkov/Desktop/Neurofeedback/Analysis/A21_d2/A21_d2.jpg');
