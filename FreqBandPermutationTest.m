@@ -9,7 +9,7 @@ clear all;
 %%%%%%%%%%%%%%%%%%%%%%% XML Object %%%%%%%%%%%%%%%%%%%%%%%
 
 data_object = eegData();
-data_object.path = '/Users/basilminkov/Desktop/Neurofeedback/data_30min/a42_d1_03-24_18-52-01/';
+data_object.path = '/Users/basilminkov/Desktop/Neurofeedback/data_30min/a5_d2_03-21_19-57-46/';
 data_object = data_object.makeParsing();
 % data_object.protocols_list
 [usefulProtocolsList, numberProtocolList, numberList, encodedProtocolList] = data_object.getUsefulProtocolsList();
@@ -18,17 +18,64 @@ data_object = data_object.makeParsing();
 
 % should be inside of the class
 
-DM = [];
+DMd = [];
 id = 0;
 indices(1) = 1;
 for i=1:length(data_object.protocols_list)
     ram_protocol = hdf5read([data_object.path data_object.h5_filename], ['protocol' int2str(i) '/raw_data']);
     id = id + length(ram_protocol); 
     indices(i+1) = id;
-    DM = [DM ram_protocol];
+    DMd = [DMd ram_protocol];
 end
 
 clear i id ram_protocol 
+
+%%%%%%%%%%%%%%%%%%% Protocol Spectrum Visualisation %%%%%%%%%%%%%%%%%%%
+
+% chanal = 23;
+% figure
+% 
+% for i=1:7
+%     protocolNameXc = sprintf('protocol%d/raw_data', Xdl(i));
+%     protocolNameYc = sprintf('protocol%d/raw_data', Ydl(i));
+%     Xc = hdf5read(path, protocolNameXc);
+%     Yc = hdf5read(path, protocolNameYc);
+%     [PxxX,WX] = pwelch(Xc(chanal, :), 3000);
+%     [PxxY,WY] = pwelch(Yc(chanal, :), 3000);
+%     subplot(7, 2, (-1)+2*i)
+%     plot(WX/pi*500/2, PxxX)
+%     title(sprintf('Protocol %d Real', Xdl(i)))
+%     xlim([0 50])
+%     ylim([0 10*10^-10])
+%     subplot(7, 2, 2*i)
+%     plot(WY/pi*500/2, PxxY)
+%     title(sprintf('Protocol %d Mock', Ydl(i)))
+%     xlim([0 50])
+%     ylim([0 10*10^-10])
+% 
+% 
+% end
+
+%%%%%%%%%%%%%%%%%%%%%%% ? Spectrum Visualisation %%%%%%%%%%%%%%%%%%%%%%%
+
+% chanal = 15;
+% figure
+% 
+% Xc = hdf5read([data_object.path data_object.h5_filename], 'protocol2/raw_data');
+% Yc = hdf5read([data_object.path data_object.h5_filename], 'protocol3/raw_data');
+% 
+% [PxxX,WX] = pwelch(Xc(chanal, :), 3000);
+% [PxxY,WY] = pwelch(Yc(chanal, :), 3000);
+% subplot(1, 2, 1)
+% plot(WX/pi*500/2, PxxX)
+% title('? Real Power')
+% xlim([0 50])
+% % ylim([0 10*10^-10])
+% subplot(1, 2, 2)
+% plot(WY/pi*500/2, PxxY)
+% title('? Mock Power')
+% xlim([0 50])
+% % ylim([0 10*10^-10])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Permutation Test (F(x)=CSP(Real, Mock)) for different frequencies
@@ -112,7 +159,7 @@ for frequency=1:frequencies % frequency for FIR filter
 
     % Appling FIR filter to dataset
     
-    DM = filtfilt(b, a, DM')';
+    DM = filtfilt(b, a, DMd')';
     
     % Making permutations
     
@@ -220,6 +267,34 @@ for frequency=1:frequencies % frequency for FIR filter
 end
 
 close(h);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ICA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ind = 1:counterR;
+% Rr = zeros(32, counterR*subprot_lenght);
+% for i = 1:counterR
+%     Rr(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Rids(ind(i)):Rids(ind(i))+(subprot_lenght-1));
+% end
+% 
+% ind = 1:counterM;
+% Mr = zeros(32, counterM*subprot_lenght);
+% for i = 1:counterM
+%     Mr(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Mids(ind(i)):Mids(ind(i))+(subprot_lenght-1));
+% end
+% 
+% [icaR, W, T, mu] = fastICA(Rr,32);
+% [icaM, W, T, mu] = fastICA(Mr,32);
+% 
+% for i = 1:32
+%     [PxxX,WX] = pwelch(icaR(i, :), 3000);
+%     subplot(4, 8, i)
+%     plot(WX/pi*500/2, PxxX)
+%     title(['Real component ' int2str(i)])
+%     xlim([0 50])
+%     % ylim([0 10*10^-10])
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Save Data
