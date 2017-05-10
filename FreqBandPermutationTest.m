@@ -6,13 +6,15 @@
 
 clear all;
 
+warning('Check channels, N_sub_prot, data_object.channels_list!')
+
 %%%%%%%%%%%%%%%%%%%%%%% XML Object %%%%%%%%%%%%%%%%%%%%%%%
 
 data_object = eegData();
-data_object.path = '/Users/basilminkov/Desktop/Neurofeedback/data_30min/a5_d2_03-21_19-57-46/';
+data_object.path = '/Users/basilminkov/Desktop/Neurofeedback/data_30min/a42_d1_03-24_18-52-01/';
 data_object = data_object.makeParsing();
-% data_object.protocols_list
-[usefulProtocolsList, numberProtocolList, numberList, encodedProtocolList] = data_object.getUsefulProtocolsList();
+data_object.channels_list(1:end-2)
+% [usefulProtocolsList, numberProtocolList, numberList, encodedProtocolList] = data_object.getUsefulProtocolsList();
 
 %%%%%%%%%%%%%%%%%%%%%%% Concatinate Protocoles %%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,11 +85,13 @@ clear i id ram_protocol
 
 %%%%%%%%%%%%%%%%%%%%%%% General Settings %%%%%%%%%%%%%%%%%%%%%%%
 
+min_frequency = 1; 
 frequencies = 30;
+channels = 32;
 steps = 300; % number of permutations
 srate = 500; % sampling rate of data
 h = waitbar(0, 'Wait...'); % initializing the process bar
-N_sub_prot = 4; % Number of subprotocols. A protocol length 
+N_sub_prot = 3; % Number of subprotocols. A protocol length 
                 % will be divided by this number. 
 distDel = 500; % number of possible distorted by a filter values that 
                % should be droped
@@ -98,13 +102,13 @@ tic; % start timer
 % should be inside of the class
 
 for i = 1:length(data_object.protocols_list)
-    if regexp(data_object.protocols_list{i}, 'FBR') > 0
+    if regexp(data_object.protocols_list{i}, 'FBR') > 0 % 'FB0''FBR'
         RNs(i) = i;
     end                    
 end
 
 for i = 1:length(data_object.protocols_list)
-    if regexp(data_object.protocols_list{i}, 'FBM\d+') > 0
+    if regexp(data_object.protocols_list{i}, 'FBM\d+') > 0 % 'FBM\d+' 'FB[1-9]'
         MNs(i) = i;
     end                    
 end
@@ -127,7 +131,7 @@ end
 
 counterM = 1;
 for i = 1:length(Mids)
-    protocol_length = indices(RNs(i)+1) - indices(RNs(i));
+    protocol_length = indices(MNs(i)+1) - indices(MNs(i));
     subprot_lenght = floor(protocol_length/N_sub_prot);
     for j = 1:N_sub_prot
         new_Mids(counterM) = Mids(i) + (j-1)*subprot_lenght;
@@ -140,16 +144,21 @@ Mids = new_Mids;
 counterR = counterR - 1;
 counterM = counterM - 1;
 
+% Rids = Rids(counterR/2+20:end);
+% Mids = Mids(counterM/2+20:end);
+% counterR = length(Rids);
+% counterM = length(Mids);
+
 counterG = counterR+counterM;
 Gids = [Rids Mids];
 
-D_sg = zeros(steps, 32);
-Dr = zeros(frequencies, 32);
-FF = zeros(frequencies);
+D_sg = zeros(steps, channels);
+Dr = zeros(frequencies, channels);
+FF = zeros(frequencies, 1);
 
 %%%%%%%%%%%%%%%%%%%%%%% Permutation Test %%%%%%%%%%%%%%%%%%%%%%%
 
-for frequency=1:frequencies % frequency for FIR filter
+for frequency=min_frequency:frequencies % frequency for FIR filter
     
     % Setting FIR filter 
     band=[frequency frequency+2];
@@ -171,14 +180,14 @@ for frequency=1:frequencies % frequency for FIR filter
         inds = randperm(counterG);
         
         ind = inds(1:counterG/2);
-        R = zeros(32, counterR*subprot_lenght);
-        for i = 1:counterR
+        R = zeros(channels, length(ind)*subprot_lenght);
+        for i = 1:length(ind)
             R(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Gids(ind(i)):Gids(ind(i))+(subprot_lenght-1));
         end
         
         ind = inds((counterG/2)+1:counterG);
-        M = zeros(32, counterM*subprot_lenght);
-        for i = 1:counterM
+        M = zeros(channels, length(ind)*subprot_lenght);
+        for i = 1:length(ind)
             M(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Gids(ind(i)):Gids(ind(i))+(subprot_lenght-1));
         end
                 
@@ -199,7 +208,7 @@ for frequency=1:frequencies % frequency for FIR filter
         C2 = C20n + 0.05 * trace(C20n) * eye(nchan) / size(C20n,1);
         % try different regularization parameters p_reg
 
-        [V, d] = eig(C1,C2);
+        [V, d] = eig(C1,C2); %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 %         d(1, 1)
 %         toc
         D_sg(step,:) = diag(d)'; 
@@ -210,13 +219,13 @@ for frequency=1:frequencies % frequency for FIR filter
     % Getting real eigenvalues
     
     ind = 1:counterR;
-    Rr = zeros(32, counterR*subprot_lenght);
+    Rr = zeros(channels, counterR*subprot_lenght);
     for i = 1:counterR
         Rr(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Rids(ind(i)):Rids(ind(i))+(subprot_lenght-1));
     end
 
     ind = 1:counterM;
-    Mr = zeros(32, counterM*subprot_lenght);
+    Mr = zeros(channels, counterM*subprot_lenght);
     for i = 1:counterM
         Mr(:, 1+(i-1)*subprot_lenght:i*subprot_lenght) = DM(:, Mids(ind(i)):Mids(ind(i))+(subprot_lenght-1));
     end
@@ -249,8 +258,8 @@ for frequency=1:frequencies % frequency for FIR filter
     Wr{frequency} = inv(Ve');
     FF(frequency) = frequency+1;
     
-    for numCompStat=1:30
-        
+    for numCompStat=1:channels
+
         for i=1:steps
             permEVs(i) = D_sg(i, numCompStat);
         end
@@ -305,13 +314,14 @@ nameDir = data_object.path;
 if exist(nameDir) ~= 7
    mkdir(nameDir)
 end
-save([data_object.path 'matlab_workspace.mat'])
+save([data_object.path 'matlab_workspace.mat'], 'p_valuePlus', 'Dr', 'Wr', 'min_frequency')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot Statistics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-chanlocs_vis = makeChanlocsVis();
+% data_object.channels_list = data_object.channels_list(1:end-2)
+chanlocs_vis = makeChanlocsVis(data_object.channels_list);
 
 H = uicontrol('Style', 'PushButton', ...
                     'String', 'Break', ...
@@ -323,16 +333,6 @@ figure(1);
 imagesc(p_valuePlus);
 title('Right Sided');colorbar;
 
-% figure(2);
-% imagesc(p_valuePlus);
-% title('Right Sided');
-% colorbar;
-% figure(3);
-% imagesc(p_valueMinus);
-% title('Left Sided');
-% colorbar;
-
-
 while (ishandle(H))
     
     figure(1);
@@ -342,7 +342,7 @@ while (ishandle(H))
     x = round(x0);
     y = round(y0);
     
-    if x > length(Wr)
+    if x > length(Wr{min_frequency})
         continue
     end
     
